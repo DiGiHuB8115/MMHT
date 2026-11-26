@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMH Family Trust — കുടുംബ ഡയറക്ടറി &amp; രജിസ്ട്രേഷൻ</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', 'Noto Sans Malayalam', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+
+    .tab-btn.active {
+      background-color: #0f766e;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);
+    }
+
+    .branch-pill.active {
+      background-color: #0f766e;
+      color: #ffffff;
+      border-color: #0f766e;
+    }
+
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(3px);
+    }
+
+    .uppercase-input {
+      text-transform: uppercase;
+    }
+
+    /* Print View Styles */
+    #printRoot {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      #appShell,
+      .no-print,
+      .modal-backdrop,
+      #toast {
+        display: none !important;
+      }
+
+      #printRoot {
+        display: block !important;
+        width: 100% !important;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+      }
+
+      .print-table th,
+      .print-table td {
+        border: 1px solid #94a3b8;
+        padding: 5px 6px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .print-table th {
+        background-color: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-weight: 700;
+      }
+
+      .print-table tr {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Main Interactive App Shell (hidden during print) -->
+  <div id="appShell" class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-700 text-white shadow-md">
+      <div class="max-w-6xl mx-auto px-4 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
+            <i data-lucide="users" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 id="trustTitleDisplay" class="text-lg sm:text-xl font-bold tracking-tight leading-snug">
+              MMH Family Trust Portal
+            </h1>
+            <p class="text-xs sm:text-sm text-teal-100">
+              കുടുംബ വിവര ശേഖരവും പുതിയ അംഗത്വ രജിസ്ട്രേഷനും
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="connectionBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-400/20 text-amber-100 border border-amber-300/30">
+            <span class="w-2 h-2 rounded-full bg-amber-300"></span>
+            Demo Mode (Sample Data)
+          </span>
+          <button id="openSetupBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-teal-800 hover:bg-teal-50 transition shadow-sm">
+            <i data-lucide="sheet" class="w-4 h-4"></i>
+            Google Sheet Connect
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2 overflow-x-auto">
+        <div class="flex items-center gap-2">
+          <button type="button" data-tab="directory" class="tab-btn active inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap">
+            <i data-lucide="search" class="w-4 h-4"></i>
+            അംഗങ്ങൾ (Directory)
+          </button>
+          <button type="button" data-tab="tree" class="tab-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap">
+            <i data-lucide="git-branch" class="w-4 h-4"></i>
+            കുടുംബ വൃക്ഷം (Family Tree)
+          </button>
+          <button type="button" data-tab="register" class="tab-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            പുതിയ അംഗം ചേരുക (Join)
+          </button>
+        </div>
+        <div class="hidden md:flex items-center gap-2 text-xs text-slate-500 shrink-0">
+          <span id="memberCountBadge" class="font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200">
+            0 അംഗങ്ങൾ
+          </span>
+          <button id="exportCsvBtn" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50 font-medium transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            CSV
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+
+      <!-- TAB 1: DIRECTORY -->
+      <section id="tab-directory" class="space-y-5">
+        <!-- Search, Sort, Print & Filter Bar -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex flex-col lg:flex-row gap-3">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input id="searchInput" type="text" placeholder="പേര്, നിക്ക് നെയിം, പിതാവ്/മാതാവ്, ബ്ലഡ് ഗ്രൂപ്പ്, മൊബൈൽ നമ്പർ എന്നിവ തിരയുക..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent" />
+            </div>
+
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+              <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 flex-1 sm:flex-none">
+                <i data-lucide="arrow-up-down" class="w-4 h-4 text-teal-700 shrink-0"></i>
+                <select id="sortSelect" aria-label="Sort members" class="bg-transparent text-xs sm:text-sm font-medium text-slate-700 focus:outline-none pr-1">
+                  <option value="age-desc" selected>വയസ്സ്: മുതിർന്നവർ മുകളിൽ (Oldest First)</option>
+                  <option value="age-asc">വയസ്സ്: ചെറിയവർ മുകളിൽ (Youngest First)</option>
+                  <option value="name-asc">പേര്: A → Z</option>
+                </select>
+              </div>
+
+              <button id="openPrintViewBtn" type="button" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-teal-700 text-white text-xs sm:text-sm font-semibold hover:bg-teal-800 transition shadow-sm shrink-0">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                പ്രിന്റ് വ്യൂ (Print View)
+              </button>
+
+              <button id="refreshDataBtn" type="button" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 transition shrink-0">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- 10 Branches Filter -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-semibold text-slate-500">10 മക്കളുടെ ശാഖകൾ (Filter by Branch):</p>
+              <span id="filteredSummaryText" class="text-xs font-medium text-teal-700"></span>
+            </div>
+            <div id="branchFilterContainer" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Member Cards Grid -->
+        <div id="directoryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden bg-white rounded-xl border border-slate-200 p-10 text-center">
+          <i data-lucide="users" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+          <p class="text-slate-700 font-semibold">വിവരങ്ങളൊന്നും കണ്ടെത്തിയില്ല</p>
+          <p class="text-slate-500 text-sm mt-1">മറ്റൊരു പേരോ ശാഖയോ തിരഞ്ഞെടുത്ത് തിരയുക.</p>
+        </div>
+      </section>
+
+      <!-- TAB 2: FAMILY TREE -->
+      <section id="tab-tree" class="hidden space-y-5">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex flex-col items-center text-center pb-5 border-b border-slate-200">
+            <span class="px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold border border-teal-200 mb-2">
+              കുടുംബ വേരുകൾ (Root Parents)
+            </span>
+            <h2 id="rootParentsDisplay" class="text-lg sm:text-xl font-bold text-slate-900">
+              Muhammed Haji &amp; Iyyathu Hajjumma (Mannilthodi)
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">
+              താഴെ കാണുന്ന 10 ശാഖകളിൽ ഏതെങ്കിലും ഒന്ന് ക്ലിക്ക് ചെയ്താൽ ആ ശാഖയിലെ അംഗങ്ങളെ വയസ്സിന്റെ ക്രമത്തിൽ കാണാം.
+            </p>
+          </div>
+
+          <div id="treeBranchesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-5"></div>
+        </div>
+
+        <!-- Selected Branch Members -->
+        <div id="treeBranchDetails" class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <h3 id="selectedBranchTitle" class="text-base sm:text-lg font-bold text-teal-800"></h3>
+              <p id="selectedBranchCount" class="text-xs text-slate-500"></p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="printSelectedBranchBtn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-700 text-teal-700 text-xs font-semibold hover:bg-teal-50 transition">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                ശാഖ പ്രിന്റ് ചെയ്യുക
+              </button>
+              <button id="addToSelectedBranchBtn" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-700 text-white text-xs font-semibold hover:bg-teal-800 transition">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                ഈ ശാഖയിൽ ചേർക്കുക
+              </button>
+            </div>
+          </div>
+          <div id="treeMembersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: JOIN / REGISTER -->
+      <section id="tab-register" class="hidden">
+        <div class="max-w-3xl mx-auto bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-7">
+          <div class="mb-6 pb-4 border-b border-slate-200">
+            <h2 class="text-xl font-bold text-slate-900">പുതിയ അംഗത്വ രജിസ്ട്രേഷൻ (New Member Form)</h2>
+            <p class="text-sm text-slate-500 mt-1">
+              താഴെ നൽകിയിരിക്കുന്ന വിവരങ്ങൾ ഇംഗ്ലീഷ് വലിയ അക്ഷരങ്ങളിൽ (UPPERCASE) പൂരിപ്പിച്ച് പ്രിവ്യൂ പരിശോധിച്ച ശേഷം സമർപ്പിക്കുക.
+            </p>
+          </div>
+
+          <form id="memberForm" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">പേര് (Full Name) *</label>
+                <input name="name" type="text" required placeholder="E.G. HABEEB RAHMAN" class="uppercase-input w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">വീട്ടിൽ വിളിക്കുന്ന പേര് (Nickname)</label>
+                <input name="nickname" type="text" placeholder="E.G. ABY" class="uppercase-input w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">കുടുംബപ്പേര് (Family Name) *</label>
+                <input name="familyName" type="text" required placeholder="E.G. MANNILTHODI" class="uppercase-input w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">10 മക്കളിൽ ഏത് ശാഖ (Branch) *</label>
+                <select id="branchSelect" name="branch" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"></select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ബ്ലഡ് ഗ്രൂപ്പ് (Blood Group)</label>
+                <select name="bloodGroup" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600">
+                  <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">പിതാവിന്റെ പേര് (Name of Father) *</label>
+                <input name="fatherName" type="text" required placeholder="FATHER'S FULL NAME" class="uppercase-input w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">മാതാവിന്റെ പേര് (Name of Mother) *</label>
+                <input name="motherName" type="text" required placeholder="MOTHER'S FULL NAME" class="uppercase-input w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ജനനത്തീയതി (Date of Birth)</label>
+                <input id="regDobInput" name="dob" type="date" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+                <p id="regAgeDisplay" class="text-xs font-semibold text-teal-700 mt-1 min-h-[1rem]"></p>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">മൊബൈൽ നമ്പർ 1 (Mobile 1) *</label>
+                <input name="mobile1" type="tel" required placeholder="+91 9876543210" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">മൊബൈൽ നമ്പർ 2 (Mobile 2)</label>
+                <input name="mobile2" type="tel" placeholder="OPTIONAL" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ഭർത്താവിന്റെ / ഭാര്യയുടെ പേര് (Spouse Name)</label>
+                <input name="spouseName" type="text" placeholder="IF MARRIED" class="uppercase-input w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ഇമെയിൽ ഐഡി (Email ID)</label>
+                <input name="email" type="email" placeholder="example@gmail.com" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              </div>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3">
+              <button type="reset" class="px-4 py-2.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                Clear
+              </button>
+              <button id="previewRegisterBtn" type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-teal-700 text-white text-sm font-semibold hover:bg-teal-800 transition shadow-sm">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                പ്രിവ്യൂ കാണുക (Preview &amp; Submit)
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Member Detail Modal -->
+  <div id="memberModal" class="fixed inset-0 z-40 hidden modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+      <div class="bg-teal-700 text-white px-5 py-4 flex items-center justify-between shrink-0">
+        <div>
+          <h3 id="modalMemberName" class="text-lg font-bold"></h3>
+          <p id="modalMemberNickname" class="text-xs text-teal-100"></p>
+        </div>
+        <button id="closeMemberModal" type="button" class="p-1 rounded-lg hover:bg-white/15">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modalMemberBody" class="p-5 space-y-3 text-sm overflow-y-auto"></div>
+      <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0">
+        <button id="modalPrintBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-100 transition">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          പ്രിന്റ് / PDF
+        </button>
+        <button id="modalEditBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition">
+          <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+          എഡിറ്റ് ചെയ്യുക (Edit)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Member Modal -->
+  <div id="editMemberModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+      <div class="bg-amber-600 text-white px-5 py-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <i data-lucide="pencil" class="w-5 h-5"></i>
+          <h3 class="text-base sm:text-lg font-bold">അംഗത്തിന്റെ വിവരങ്ങൾ എഡിറ്റ് ചെയ്യുക (Edit Member)</h3>
+        </div>
+        <button id="closeEditModal" type="button" class="p-1 rounded-lg hover:bg-white/15">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="editMemberForm" class="p-5 overflow-y-auto space-y-4 text-sm">
+        <input type="hidden" id="editMemberId" name="id" />
+        <input type="hidden" id="editRowIndex" name="rowIndex" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">പേര് (Full Name) *</label>
+            <input name="name" type="text" required class="uppercase-input w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">വിളിപ്പേര് (Nickname)</label>
+            <input name="nickname" type="text" class="uppercase-input w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">കുടുംബപ്പേര് (Family Name) *</label>
+            <input name="familyName" type="text" required class="uppercase-input w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ശാഖ (Branch) *</label>
+            <select id="editBranchSelect" name="branch" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ബ്ലഡ് ഗ്രൂപ്പ്</label>
+            <select name="bloodGroup" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">പിതാവിന്റെ പേര് *</label>
+            <input name="fatherName" type="text" required class="uppercase-input w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">മാതാവിന്റെ പേര് *</label>
+            <input name="motherName" type="text" required class="uppercase-input w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ജനനത്തീയതി (DOB)</label>
+            <input id="editDobInput" name="dob" type="date" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            <p id="editAgeDisplay" class="text-xs font-semibold text-teal-700 mt-1 min-h-[1rem]"></p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">മൊബൈൽ 1 *</label>
+            <input name="mobile1" type="tel" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">മൊബൈൽ 2</label>
+            <input name="mobile2" type="tel" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ഭർത്താവിന്റെ / ഭാര്യയുടെ പേര് (Spouse)</label>
+            <input name="spouseName" type="text" class="uppercase-input w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ഇമെയിൽ ഐഡി</label>
+            <input name="email" type="email" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+          <button id="cancelEditBtn" type="button" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition">
+            റദ്ദാക്കുക (Cancel)
+          </button>
+          <button id="saveEditMemberBtn" type="submit" class="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-teal-700 text-white font-semibold hover:bg-teal-800 transition shadow-sm">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            മാറ്റങ്ങൾ സേവ് ചെയ്യുക (Save Changes)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Registration Preview Modal -->
+  <div id="registerPreviewModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+      <div class="bg-teal-800 text-white px-5 py-4 flex items-center justify-between shrink-0">
+        <h3 class="text-base sm:text-lg font-bold">വിവരങ്ങൾ സ്ഥിരീകരിക്കുക (Preview)</h3>
+        <button id="closeRegisterPreviewModal" type="button" class="p-1 rounded-lg hover:bg-white/15">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="registerPreviewBody" class="p-5 overflow-y-auto space-y-2 text-sm"></div>
+      <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-end gap-2 shrink-0">
+        <button id="editFromPreviewBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-100 transition">
+          <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+          Edit
+        </button>
+        <button id="printRegisterPreviewBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-teal-700 text-teal-700 bg-white text-xs font-semibold hover:bg-teal-50 transition">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          Print / PDF
+        </button>
+        <button id="confirmSubmitMemberBtn" type="button" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-700 text-white text-xs font-semibold hover:bg-teal-800 transition shadow-sm">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          Save &amp; Submit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print View Preview Modal -->
+  <div id="printViewModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-slate-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <i data-lucide="printer" class="w-5 h-5 text-emerald-400"></i>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold">പ്രിന്റ് വ്യൂ (Print Preview)</h3>
+            <p id="printViewSubtitle" class="text-xs text-slate-300"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="triggerPrintBtn" type="button" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition shadow-sm">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            പ്രിന്റ് ചെയ്യുക / Save PDF
+          </button>
+          <button id="closePrintViewModal" type="button" class="p-1.5 rounded-lg hover:bg-white/15">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 overflow-y-auto bg-slate-100 flex-1">
+        <div id="printViewContent" class="bg-white shadow-md border border-slate-200 rounded-lg p-5 sm:p-7 mx-auto max-w-4xl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Sheet Setup Modal -->
+  <div id="setupModal" class="fixed inset-0 z-40 hidden modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+      <div class="bg-slate-900 text-white px-5 py-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sheet" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="text-base sm:text-lg font-bold">Google Sheet Live Sync Setup</h3>
+        </div>
+        <button id="closeSetupModal" type="button" class="p-1 rounded-lg hover:bg-white/15">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-5 text-sm">
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+            Google Apps Script Web App URL
+          </label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input id="appsScriptUrlInput" type="url" placeholder="https://script.google.com/macros/s/...../exec" class="flex-1 px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+            <button id="saveScriptUrlBtn" type="button" class="px-4 py-2.5 rounded-lg bg-teal-700 text-white font-semibold hover:bg-teal-800 transition shrink-0">
+              Connect &amp; Sync
+            </button>
+          </div>
+          <div class="flex items-center justify-between pt-1">
+            <p class="text-xs text-slate-500">നിങ്ങളുടെ ഗൂഗിൾ ഷീറ്റുമായി നേരിട്ട് ബന്ധിപ്പിക്കാൻ മുകളിലെ ബോക്സിൽ URL നൽകുക.</p>
+            <button id="disconnectSheetBtn" type="button" class="text-xs text-rose-600 hover:underline font-medium">
+              Use Demo Mode
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+          <h4 class="font-bold text-slate-800 text-sm">ഗൂഗിൾ ഷീറ്റ് എങ്ങനെ കണക്ട് ചെയ്യാം? (Edit സൗകര്യം ഉൾപ്പെടെ)</h4>
+          <ol class="list-decimal list-inside space-y-1 text-xs sm:text-sm text-slate-600">
+            <li>നിങ്ങളുടെ കുടുംബ വിവരങ്ങളുള്ള <strong>Google Sheet</strong> തുറക്കുക.</li>
+            <li>മുകളിൽ <strong>Extensions &rarr; Apps Script</strong> ക്ലിക്ക് ചെയ്യുക.</li>
+            <li>താഴെ കാണുന്ന പുതിയ കോഡ് (Add + Edit സപ്പോർട്ട് ഉള്ളത്) പേസ്റ്റ് ചെയ്ത് Save ചെയ്യുക.</li>
+            <li><strong>Deploy &rarr; Manage deployments &rarr; Edit &rarr; New version</strong> നൽകി Deploy ചെയ്യുക (Who has access: <em>Anyone</em>).</li>
+          </ol>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-slate-700">Apps Script Code (Code.gs — Add &amp; Edit Support)</span>
+            <button id="copyScriptBtn" type="button" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold transition">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              Copy Code
+            </button>
+          </div>
+          <pre id="appsScriptCode" class="bg-slate-900 text-emerald-300 p-3.5 rounded-xl text-xs overflow-x-auto leading-relaxed">function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getDisplayValues();
+  if (data.length &lt;= 1) {
+    return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+  }
+  var headers = data[0];
+  var rows = [];
+  for (var i = 1; i &lt; data.length; i++) {
+    var row = { rowIndex: i + 1 };
+    for (var j = 0; j &lt; headers.length; j++) {
+      row[headers[j]] = data[i][j];
+    }
+    rows.push(row);
+  }
+  return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var p = JSON.parse(e.postData.contents);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Timestamp", "Name", "Nickname", "FatherName", "MotherName", "FamilyName", "Branch", "BloodGroup", "Mobile1", "Mobile2", "DOB", "Photo", "HusbandName", "WifeName", "Email"]);
+  }
+  var rowValues = [
+    new Date(), p.name || "", p.nickname || "", p.fatherName || "", p.motherName || "",
+    p.familyName || "", p.branch || "", p.bloodGroup || "", p.mobile1 || "",
+    p.mobile2 || "", p.dob || "", "", p.spouseName || "", "", p.email || ""
+  ];
+  if (p.action === "update" &amp;&amp; p.rowIndex &amp;&amp; Number(p.rowIndex) &gt;= 2) {
+    var r = Number(p.rowIndex);
+    var existingRow = sheet.getRange(r, 1, 1, 15).getValues()[0];
+    rowValues[0] = existingRow[0] || new Date();
+    rowValues[11] = existingRow[11] || "";
+    sheet.getRange(r, 1, 1, rowValues.length).setValues([rowValues]);
+    return ContentService.createTextOutput(JSON.stringify({ status: "updated", rowIndex: r })).setMimeType(ContentService.MimeType.JSON);
+  }
+  sheet.appendRow(rowValues);
+  return ContentService.createTextOutput(JSON.stringify({ status: "success", rowIndex: sheet.getLastRow() })).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Print Root (rendered only during @media print) -->
+  <div id="printRoot"></div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-slate-900 flex items-center gap-2">
+    <span id="toastMessage"></span>
+  </div>
+
+  <script>
+    const BRANCHES = [
+      "1. KOYA", "2. AHMAD KUTTY", "3. HYDER ALI",
+      "4. KUNJATHUTTY", "5. KHADEEJA", "6. MARIYAMU",
+      "7. AASYAMU", "8. SHAHIDA", "9. ABBAS",
+      "10. SUBAITHA"
+    ];
+
+    const SAMPLE_MEMBERS = [
+      {
+        id: "m1", rowIndex: 2, name: "AHAMED KUTTY", nickname: "BAVUTTY", familyName: "MANNILTHODI",
+        branch: "2. AHMAD KUTTY", bloodGroup: "O+", fatherName: "MUHAMMED HAJI", motherName: "IYYATHU HAJJUMMA",
+        dob: "1952-06-15", mobile1: "+91 9633448973", mobile2: "",
+        spouseName: "SAINABA", email: ""
+      },
+      {
+        id: "m2", rowIndex: 3, name: "ABDUL RAZACK", nickname: "", familyName: "CHEKIDAPPURATH",
+        branch: "8. SHAHIDA", bloodGroup: "B+", fatherName: "MAMMU", motherName: "THITU",
+        dob: "1952-12-01", mobile1: "+91 9446158198", mobile2: "+91 8075424625",
+        spouseName: "SHAHIDA", email: "c.adbulrazack@gmail.com"
+      },
+      {
+        id: "m3", rowIndex: 4, name: "MARIYAMU", nickname: "", familyName: "MANNILTHODI",
+        branch: "6. MARIYAMU", bloodGroup: "A+", fatherName: "MUHAMMED HAJI", motherName: "IYYATHUMMA",
+        dob: "1959-05-16", mobile1: "+91 9895780805", mobile2: "",
+        spouseName: "MOHAMED ALIAS KUNHIMON", email: "mariyamupulikkal@gmail.com"
+      },
+      {
+        id: "m4", rowIndex: 5, name: "HABEEB RAHMAN", nickname: "ABY", familyName: "CHEKIDAPPURATH",
+        branch: "8. SHAHIDA", bloodGroup: "O+", fatherName: "ABDUL RAZACK", motherName: "SHAHIDA",
+        dob: "1980-08-14", mobile1: "+91 8289828115", mobile2: "+966 597865959",
+        spouseName: "RISVANA", email: "ch.habeebrahman@gmail.com"
+      },
+      {
+        id: "m5", rowIndex: 6, name: "SAFEER AHAMED", nickname: "SEFI", familyName: "MANNILTHODI",
+        branch: "2. AHMAD KUTTY", bloodGroup: "B+", fatherName: "AHAMED KUTTY", motherName: "SAINABA",
+        dob: "1987-10-22", mobile1: "+91 9946198484", mobile2: "+91 9847600062",
+        spouseName: "SAFNA BAVA", email: "mtsefi@gmail.com"
+      },
+      {
+        id: "m6", rowIndex: 7, name: "RIDWAN HABEEB", nickname: "RIDHU", familyName: "CHEKIDAPPURATH",
+        branch: "8. SHAHIDA", bloodGroup: "O+", fatherName: "HABEEB RAHMAN", motherName: "RISVANA HABEEB",
+        dob: "2009-05-09", mobile1: "+91 7994868115", mobile2: "",
+        spouseName: "", email: "ridwanhabeebch@gmail.com"
+      }
+    ];
+
+    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMDlMecRD1zbdOAakCf_BX5xojcGQbkgDOt_7GFm7oszYUTGwpGDzzvqoknkiUNUWl/exec";
+
+    let state = {
+      members: [],
+      selectedBranchFilter: "ALL",
+      selectedTreeBranch: null,
+      searchQuery: "",
+      sortBy: "age-desc",
+      scriptUrl: DEFAULT_SCRIPT_URL,
+      activeModalMemberId: null,
+      pendingNewMember: null
+    };
+
+    // --- Date & Age Utilities ---
+    function parseDobToDate(dobStr) {
+      if (!dobStr) return null;
+      const s = String(dobStr).trim();
+      if (!s) return null;
+
+      // YYYY-MM-DD (or ISO)
+      let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (m) {
+        const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      // DD/MM/YYYY or DD-MM-YYYY
+      m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m) {
+        const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      const fallback = new Date(s);
+      return isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    function toIsoDate(dobStr) {
+      const d = parseDobToDate(dobStr);
+      if (!d) return "";
+      const y = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, "0");
+      const da = String(d.getDate()).padStart(2, "0");
+      return `${y}-${mo}-${da}`;
+    }
+
+    function formatDobDisplay(dobStr) {
+      const d = parseDobToDate(dobStr);
+      if (!d) return "-";
+      const da = String(d.getDate()).padStart(2, "0");
+      const mo = String(d.getMonth() + 1).padStart(2, "0");
+      const y = d.getFullYear();
+      return `${da}-${mo}-${y}`;
+    }
+
+    function calculateAge(dobStr) {
+      const dob = parseDobToDate(dobStr);
+      if (!dob) return null;
+      const today = new Date();
+      let years = today.getFullYear() - dob.getFullYear();
+      let months = today.getMonth() - dob.getMonth();
+      let days = today.getDate() - dob.getDate();
+      if (days < 0) {
+        months -= 1;
+        days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+      }
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+      const timestamp = dob.getTime();
+      return { years: Math.max(0, years), months: Math.max(0, months), days: Math.max(0, days), timestamp };
+    }
+
+    function normalizeBranch(raw) {
+      if (!raw) return "";
+      const upper = String(raw).trim().toUpperCase();
+      const exact = BRANCHES.find(b => b.toUpperCase() === upper);
+      if (exact) return exact;
+      if (upper.includes("AHMAD") || upper.includes("AHAMED")) return "2. AHMAD KUTTY";
+      for (const b of BRANCHES) {
+        const namePart = b.replace(/^\d+\.\s*/, "").toUpperCase();
+        if (upper.includes(namePart) || namePart.includes(upper)) return b;
+      }
+      return upper;
+    }
+
+    function pickField(row, keys) {
+      const rowKeys = Object.keys(row);
+      for (const target of keys) {
+        const lowerTarget = target.toLowerCase();
+        for (const rk of rowKeys) {
+          if (rk.toLowerCase().includes(lowerTarget)) {
+            const val = row[rk];
+            if (val !== undefined && val !== null && String(val).trim() !== "") {
+              return String(val).trim();
+            }
+          }
+        }
+      }
+      return "";
+    }
+
+    function sortMembersList(list, sortMode) {
+      return [...list].sort((a, b) => {
+        if (sortMode === "name-asc") {
+          return (a.name || "").localeCompare(b.name || "");
+        }
+        const ageA = calculateAge(a.dob);
+        const ageB = calculateAge(b.dob);
+        // Members without valid DOB always go to the bottom
+        if (!ageA && !ageB) return (a.name || "").localeCompare(b.name || "");
+        if (!ageA) return 1;
+        if (!ageB) return -1;
+        // Oldest first = smallest birth timestamp first
+        if (sortMode === "age-asc") {
+          return ageB.timestamp - ageA.timestamp;
+        }
+        return ageA.timestamp - ageB.timestamp;
+      });
+    }
+
+    function getFilteredAndSortedMembers() {
+      const q = state.searchQuery.trim().toLowerCase();
+      const filtered = state.members.filter(m => {
+        const matchesBranch = state.selectedBranchFilter === "ALL" || m.branch === state.selectedBranchFilter;
+        const text = `${m.name} ${m.nickname} ${m.familyName} ${m.fatherName} ${m.motherName} ${m.mobile1} ${m.mobile2} ${m.spouseName} ${m.bloodGroup || ""} ${m.branch}`.toLowerCase();
+        return matchesBranch && (!q || text.includes(q));
+      });
+      return sortMembersList(filtered, state.sortBy);
+    }
+
+    // --- State & Storage ---
+    function loadInitialState() {
+      try {
+        const savedMode = localStorage.getItem("mmh_demo_mode");
+        const savedUrl = localStorage.getItem("mmh_script_url");
+        const savedMembers = localStorage.getItem("mmh_demo_members");
+        const isOldDefault = savedUrl && (savedUrl.includes("AKfycbw0CXe-EtsqgpfO35jzUuBML-e4mMkSS-jPg1kuUC_elOpl8vTqplvPLlhhzJ1CWilv") || savedUrl.includes("AKfycbyz1sQRXqRg1Da2CfHvP19pyOWR3my4_C4DUR2EBJe1SWIdQbq8Geg1p7ArO7STQuxd") || savedUrl.includes("AKfycbz8ubhlQWLRC4AqiSkRbYfZ9pFkcfPRp8c-nWvofNxCt-UkUPkp8HDkaoJVpLtsEtbT"));
+        state.scriptUrl = savedMode === "1" ? "" : ((savedUrl && !isOldDefault) ? savedUrl : DEFAULT_SCRIPT_URL);
+        state.members = savedMembers ? JSON.parse(savedMembers) : [...SAMPLE_MEMBERS];
+      } catch (e) {
+        state.scriptUrl = DEFAULT_SCRIPT_URL;
+        state.members = [...SAMPLE_MEMBERS];
+      }
+      document.getElementById("appsScriptUrlInput").value = state.scriptUrl;
+      updateConnectionBadge();
+      if (state.scriptUrl) {
+        fetchFromGoogleSheet();
+      }
+    }
+
+    function saveDemoMembers() {
+      try {
+        localStorage.setItem("mmh_demo_members", JSON.stringify(state.members));
+      } catch (e) {}
+    }
+
+    function updateConnectionBadge() {
+      const badge = document.getElementById("connectionBadge");
+      if (state.scriptUrl) {
+        badge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-400/20 text-emerald-100 border border-emerald-300/30";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-300"></span> Connected to Google Sheet';
+      } else {
+        badge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-400/20 text-amber-100 border border-amber-300/30";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-300"></span> Demo Mode (Sample Data)';
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMessage");
+      toastMsg.textContent = msg;
+      toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 ${isError ? "bg-rose-600" : "bg-teal-800"}`;
+      toast.classList.remove("hidden");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.add("hidden"), 3500);
+    }
+
+    async function fetchFromGoogleSheet() {
+      if (!state.scriptUrl) {
+        renderAll();
+        return;
+      }
+      try {
+        showToast("ഗൂഗിൾ ഷീറ്റിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു...");
+        const res = await fetch(state.scriptUrl);
+        if (!res.ok) throw new Error("Network error");
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          state.members = data.map((row, idx) => {
+            const husband = pickField(row, ["husband", "ഭർത്താവിന്റെ"]);
+            const wife = pickField(row, ["wife", "ഭാര്യയുടെ"]);
+            const spouse = pickField(row, ["spousename", "spouse"]) || husband || wife;
+            return {
+              id: "gs_" + idx,
+              rowIndex: row.rowIndex ? Number(row.rowIndex) : idx + 2,
+              name: pickField(row, ["your name", "നിങ്ങളുടെ പേര്", "name"]),
+              nickname: pickField(row, ["nickname", "വിളിപ്പേര്"]),
+              familyName: pickField(row, ["familyname", "family name", "വീട്ടുപേര്"]),
+              branch: normalizeBranch(pickField(row, ["branch", "familyhead", "കുടുംബവുമായി ബന്ധപ്പെട്ട"])),
+              bloodGroup: pickField(row, ["bloodgroup", "blood group", "ബ്ലഡ് ഗ്രൂപ്പ്"]),
+              fatherName: pickField(row, ["fathername", "name of father", "ഉപ്പാൻ്റെ പേര്", "ഉപ്പാന്റെ പേര്"]),
+              motherName: pickField(row, ["mothername", "name of mother", "ഉമ്മയുടെ പേര്"]),
+              dob: toIsoDate(pickField(row, ["date of birth", "ജനിച്ച ദിവസം", "dob"])),
+              mobile1: pickField(row, ["mobile number -1", "mobile1"]),
+              mobile2: pickField(row, ["mobile number -2", "mobile2"]),
+              spouseName: spouse,
+              email: pickField(row, ["email"])
+            };
+          }).filter(m => m.name);
+          renderAll();
+          showToast("ഗൂഗിൾ ഷീറ്റുമായി വിജയകരമായി സിങ്ക് ചെയ്തു!");
+        }
+      } catch (err) {
+        showToast("ഗൂഗിൾ ഷീറ്റ് ലോഡ് ചെയ്യാനായില്ല. സാമ്പിൾ ഡാറ്റ കാണിക്കുന്നു.", true);
+        renderAll();
+      }
+    }
+
+    // --- Navigation & Rendering ---
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
+      });
+      ["directory", "tree", "register"].forEach(name => {
+        document.getElementById("tab-" + name).classList.toggle("hidden", name !== tabName);
+      });
+    }
+
+    function renderBranchFilters() {
+      const container = document.getElementById("branchFilterContainer");
+      const allBtn = `<button type="button" data-branch="ALL" class="branch-pill ${state.selectedBranchFilter === "ALL" ? "active" : ""} px-3 py-1 rounded-full text-xs font-medium border border-slate-300 text-slate-700 hover:bg-slate-100 transition">എല്ലാം (${state.members.length})</button>`;
+      const branchBtns = BRANCHES.map(b => {
+        const count = state.members.filter(m => m.branch === b).length;
+        return `<button type="button" data-branch="${escapeHtml(b)}" class="branch-pill ${state.selectedBranchFilter === b ? "active" : ""} px-3 py-1 rounded-full text-xs font-medium border border-slate-300 text-slate-700 hover:bg-slate-100 transition">${escapeHtml(b)} (${count})</button>`;
+      }).join("");
+      container.innerHTML = allBtn + branchBtns;
+
+      container.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedBranchFilter = btn.dataset.branch;
+          renderBranchFilters();
+          renderDirectory();
+        });
+      });
+    }
+
+    function renderDirectory() {
+      const grid = document.getElementById("directoryGrid");
+      const empty = document.getElementById("emptyState");
+      const filtered = getFilteredAndSortedMembers();
+
+      document.getElementById("memberCountBadge").textContent = `${state.members.length} അംഗങ്ങൾ`;
+      document.getElementById("filteredSummaryText").textContent = `കാണിക്കുന്നത്: ${filtered.length} / ${state.members.length} അംഗങ്ങൾ`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        empty.classList.remove("hidden");
+        return;
+      }
+      empty.classList.add("hidden");
+
+      grid.innerHTML = filtered.map((m, index) => {
+        const ageObj = calculateAge(m.dob);
+        const ageBadge = ageObj
+          ? `<span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">${ageObj.years} വയസ്സ്</span>`
+          : `<span class="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">വയസ്സ് ഇല്ല</span>`;
+        const bloodBadge = m.bloodGroup
+          ? `<span class="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">${escapeHtml(m.bloodGroup)}</span>`
+          : "";
+
+        return `
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-3">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] font-bold text-slate-400">#${index + 1}</span>
+                    <h3 class="font-bold text-slate-900 text-base leading-snug truncate">${escapeHtml(m.name)}</h3>
+                  </div>
+                  <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                    ${m.nickname ? `<span class="text-xs font-medium text-teal-700 bg-teal-50 px-2 py-0.5 rounded">"${escapeHtml(m.nickname)}"</span>` : ""}
+                    ${ageBadge}
+                    ${bloodBadge}
+                  </div>
+                </div>
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
+                  ${escapeHtml(m.branch || "-")}
+                </span>
+              </div>
+
+              <div class="mt-3 space-y-1 text-xs text-slate-600">
+                <p><span class="font-semibold text-slate-700">ജനനത്തീയതി:</span> ${escapeHtml(formatDobDisplay(m.dob))}</p>
+                <p><span class="font-semibold text-slate-700">കുടുംബം:</span> ${escapeHtml(m.familyName || "-")}</p>
+                <p><span class="font-semibold text-slate-700">പിതാവ്:</span> ${escapeHtml(m.fatherName || "-")}</p>
+                <p><span class="font-semibold text-slate-700">മാതാവ്:</span> ${escapeHtml(m.motherName || "-")}</p>
+                ${m.spouseName ? `<p><span class="font-semibold text-slate-700">പങ്കാളി:</span> ${escapeHtml(m.spouseName)}</p>` : ""}
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2 min-w-0">
+                ${m.mobile1 ? `<a href="tel:${escapeHtml(m.mobile1)}" class="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline truncate"><i data-lucide="phone" class="w-3.5 h-3.5 shrink-0"></i>${escapeHtml(m.mobile1)}</a>` : ""}
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" data-edit-id="${escapeHtml(m.id)}" class="edit-member-btn inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg transition">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                  എഡിറ്റ്
+                </button>
+                <button type="button" data-member-id="${escapeHtml(m.id)}" class="view-member-btn text-xs font-semibold text-slate-700 hover:text-teal-700 bg-slate-100 hover:bg-teal-50 px-2.5 py-1.5 rounded-lg transition">
+                  വിവരങ്ങൾ
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      grid.querySelectorAll(".view-member-btn").forEach(btn => {
+        btn.addEventListener("click", () => openMemberModal(btn.dataset.memberId));
+      });
+      grid.querySelectorAll(".edit-member-btn").forEach(btn => {
+        btn.addEventListener("click", () => openEditModal(btn.dataset.editId));
+      });
+      lucide.createIcons();
+    }
+
+    function renderFamilyTree() {
+      const grid = document.getElementById("treeBranchesGrid");
+      grid.innerHTML = BRANCHES.map((b, i) => {
+        const count = state.members.filter(m => m.branch === b).length;
+        const isSelected = state.selectedTreeBranch === b;
+        return `
+          <button type="button" data-tree-branch="${escapeHtml(b)}" class="text-left p-3.5 rounded-xl border transition ${isSelected ? "border-teal-600 bg-teal-50 ring-2 ring-teal-500/30" : "border-slate-200 bg-slate-50 hover:bg-white hover:border-teal-400"}">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-teal-700">ശാഖ ${i + 1}</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">${count}</span>
+            </div>
+            <p class="text-xs text-slate-600 font-medium truncate">${escapeHtml(b)}</p>
+          </button>
+        `;
+      }).join("");
+
+      grid.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.selectedTreeBranch = btn.dataset.treeBranch;
+          renderFamilyTree();
+          renderSelectedTreeBranch();
+        });
+      });
+    }
+
+    function renderSelectedTreeBranch() {
+      const box = document.getElementById("treeBranchDetails");
+      if (!state.selectedTreeBranch) {
+        box.classList.add("hidden");
+        return;
+      }
+      box.classList.remove("hidden");
+      const members = sortMembersList(
+        state.members.filter(m => m.branch === state.selectedTreeBranch),
+        "age-desc"
+      );
+      document.getElementById("selectedBranchTitle").textContent = state.selectedTreeBranch;
+      document.getElementById("selectedBranchCount").textContent = `${members.length} അംഗങ്ങൾ (വയസ്സ്: മുതിർന്നവർ മുകളിൽ)`;
+
+      const list = document.getElementById("treeMembersList");
+      if (members.length === 0) {
+        list.innerHTML = `<p class="text-sm text-slate-500 col-span-2 py-4 text-center">ഈ ശാഖയിൽ ഇതുവരെ അംഗങ്ങളെ ചേർത്തിട്ടില്ല.</p>`;
+      } else {
+        list.innerHTML = members.map(m => {
+          const ageObj = calculateAge(m.dob);
+          return `
+            <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-bold text-slate-900 text-sm truncate">
+                  ${escapeHtml(m.name)}
+                  ${ageObj ? `<span class="text-xs font-semibold text-amber-700 ml-1">(${ageObj.years} വയസ്സ്)</span>` : ""}
+                </p>
+                <p class="text-xs text-slate-600 mt-0.5 truncate">S/o / D/o: ${escapeHtml(m.fatherName || "-")} &amp; ${escapeHtml(m.motherName || "-")}</p>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" data-edit-id="${escapeHtml(m.id)}" class="tree-edit-btn px-2.5 py-1 rounded bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800 hover:bg-amber-100">
+                  Edit
+                </button>
+                <button type="button" data-member-id="${escapeHtml(m.id)}" class="tree-view-btn px-2.5 py-1 rounded bg-white border border-slate-200 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                  View
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+        list.querySelectorAll(".tree-view-btn").forEach(btn => {
+          btn.addEventListener("click", () => openMemberModal(btn.dataset.memberId));
+        });
+        list.querySelectorAll(".tree-edit-btn").forEach(btn => {
+          btn.addEventListener("click", () => openEditModal(btn.dataset.editId));
+        });
+      }
+      lucide.createIcons();
+    }
+
+    // --- Member Detail Modal ---
+    function openMemberModal(id) {
+      const m = state.members.find(x => x.id === id);
+      if (!m) return;
+      state.activeModalMemberId = m.id;
+      const ageObj = calculateAge(m.dob);
+      const ageText = ageObj ? `${ageObj.years} വർഷം, ${ageObj.months} മാസം` : "-";
+
+      document.getElementById("modalMemberName").textContent = m.name;
+      document.getElementById("modalMemberNickname").textContent = m.nickname ? `വിളിപ്പേര്: ${m.nickname}` : (m.familyName || "");
+      document.getElementById("modalMemberBody").innerHTML = `
+        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div><span class="text-xs text-slate-500 block">കുടുംബപ്പേര്</span><strong>${escapeHtml(m.familyName || "-")}</strong></div>
+          <div><span class="text-xs text-slate-500 block">ശാഖ (Branch)</span><strong>${escapeHtml(m.branch || "-")}</strong></div>
+          <div><span class="text-xs text-slate-500 block">ജനനത്തീയതി</span><strong>${escapeHtml(formatDobDisplay(m.dob))}</strong></div>
+          <div><span class="text-xs text-slate-500 block">വയസ്സ്</span><strong class="text-amber-700">${escapeHtml(ageText)}</strong></div>
+          <div><span class="text-xs text-slate-500 block">പിതാവ്</span><strong>${escapeHtml(m.fatherName || "-")}</strong></div>
+          <div><span class="text-xs text-slate-500 block">മാതാവ്</span><strong>${escapeHtml(m.motherName || "-")}</strong></div>
+          <div><span class="text-xs text-slate-500 block">പങ്കാളി (Spouse)</span><strong>${escapeHtml(m.spouseName || "-")}</strong></div>
+          <div><span class="text-xs text-slate-500 block">ബ്ലഡ് ഗ്രൂപ്പ്</span><strong class="text-rose-700">${escapeHtml(m.bloodGroup || "-")}</strong></div>
+        </div>
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200">
+            <span class="text-xs text-slate-500">മൊബൈൽ 1</span>
+            <a href="tel:${escapeHtml(m.mobile1)}" class="font-semibold text-teal-700 hover:underline">${escapeHtml(m.mobile1 || "-")}</a>
+          </div>
+          ${m.mobile2 ? `
+          <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200">
+            <span class="text-xs text-slate-500">മൊബൈൽ 2</span>
+            <a href="tel:${escapeHtml(m.mobile2)}" class="font-semibold text-teal-700 hover:underline">${escapeHtml(m.mobile2)}</a>
+          </div>` : ""}
+          ${m.email ? `
+          <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200">
+            <span class="text-xs text-slate-500">ഇമെയിൽ</span>
+            <a href="mailto:${escapeHtml(m.email)}" class="font-semibold text-teal-700 hover:underline">${escapeHtml(m.email)}</a>
+          </div>` : ""}
+        </div>
+      `;
+      document.getElementById("memberModal").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    // --- Edit Member Modal ---
+    function openEditModal(id) {
+      const m = state.members.find(x => x.id === id);
+      if (!m) return;
+      document.getElementById("memberModal").classList.add("hidden");
+
+      const form = document.getElementById("editMemberForm");
+      document.getElementById("editMemberId").value = m.id;
+      document.getElementById("editRowIndex").value = m.rowIndex || "";
+      form.elements.name.value = m.name || "";
+      form.elements.nickname.value = m.nickname || "";
+      form.elements.familyName.value = m.familyName || "";
+      form.elements.branch.value = m.branch || "";
+      form.elements.bloodGroup.value = m.bloodGroup || "";
+      form.elements.fatherName.value = m.fatherName || "";
+      form.elements.motherName.value = m.motherName || "";
+      form.elements.dob.value = toIsoDate(m.dob);
+      form.elements.mobile1.value = m.mobile1 || "";
+      form.elements.mobile2.value = m.mobile2 || "";
+      form.elements.spouseName.value = m.spouseName || "";
+      form.elements.email.value = m.email || "";
+
+      updateDobAgeLabel("editDobInput", "editAgeDisplay");
+      document.getElementById("editMemberModal").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function updateDobAgeLabel(inputId, outputId) {
+      const val = document.getElementById(inputId).value;
+      const out = document.getElementById(outputId);
+      const age = calculateAge(val);
+      out.textContent = age ? `വയസ്സ്: ${age.years} വർഷം, ${age.months} മാസം` : "";
+    }
+
+    // --- Print View Builders ---
+    function buildDirectoryPrintHtml(membersList, filterLabel) {
+      const nowStr = new Date().toLocaleDateString("en-GB");
+      const sortLabel = state.sortBy === "age-desc"
+        ? "വയസ്സ്: മുതിർന്നവർ മുകളിൽ (Oldest First)"
+        : state.sortBy === "age-asc"
+          ? "വയസ്സ്: ചെറിയവർ മുകളിൽ (Youngest First)"
+          : "പേര്: A → Z";
+
+      const rowsHtml = membersList.map((m, i) => {
+        const ageObj = calculateAge(m.dob);
+        return `
+          <tr>
+            <td style="text-align:center;font-weight:600;">${i + 1}</td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(m.name)}</div>
+              ${m.nickname ? `<div style="font-size:10px;color:#475569;">(${escapeHtml(m.nickname)})</div>` : ""}
+            </td>
+            <td style="white-space:nowrap;">
+              <div style="font-weight:700;color:#0f766e;">${ageObj ? ageObj.years + " വയസ്സ്" : "-"}</div>
+              <div style="font-size:10px;color:#475569;">${escapeHtml(formatDobDisplay(m.dob))}</div>
+            </td>
+            <td>${escapeHtml(m.branch || "-")}</td>
+            <td>${escapeHtml(m.familyName || "-")}</td>
+            <td>
+              <div><strong>P:</strong> ${escapeHtml(m.fatherName || "-")}</div>
+              <div><strong>M:</strong> ${escapeHtml(m.motherName || "-")}</div>
+              ${m.spouseName ? `<div><strong>S:</strong> ${escapeHtml(m.spouseName)}</div>` : ""}
+            </td>
+            <td style="white-space:nowrap;">
+              <div>${escapeHtml(m.mobile1 || "-")}</div>
+              ${m.mobile2 ? `<div style="font-size:10px;color:#475569;">${escapeHtml(m.mobile2)}</div>` : ""}
+            </td>
+            <td style="text-align:center;font-weight:700;">${escapeHtml(m.bloodGroup || "-")}</td>
+          </tr>
+        `;
+      }).join("");
+
+      return `
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0f766e;padding-bottom:10px;margin-bottom:14px;">
+            <div>
+              <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f766e;">MMH FAMILY TRUST — MEMBER DIRECTORY</h2>
+              <p style="margin:3px 0 0;font-size:12px;color:#475569;">${escapeHtml(filterLabel)} | ക്രമം: ${escapeHtml(sortLabel)}</p>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#334155;">
+              <div><strong>ആകെ അംഗങ്ങൾ:</strong> ${membersList.length}</div>
+              <div><strong>തീയതി:</strong> ${escapeHtml(nowStr)}</div>
+            </div>
+          </div>
+
+          <table class="print-table w-full border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="border border-slate-300 px-2 py-1.5 text-center w-9">#</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-left">പേര് / വിളിപ്പേര്</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-left">വയസ്സ് / DOB</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-left">ശാഖ</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-left">കുടുംബപ്പേര്</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-left">മാതാപിതാക്കൾ / പങ്കാളി</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-left">മൊബൈൽ</th>
+                <th class="border border-slate-300 px-2 py-1.5 text-center">ബ്ലഡ്</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || `<tr><td colspan="8" style="text-align:center;padding:16px;color:#64748b;">അംഗങ്ങളൊന്നും കണ്ടെത്തിയില്ല</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function buildSingleMemberPrintHtml(m) {
+      const ageObj = calculateAge(m.dob);
+      const ageStr = ageObj ? `${ageObj.years} വർഷം, ${ageObj.months} മാസം` : "-";
+      const rows = [
+        ["പേര് (Full Name)", m.name],
+        ["വിളിപ്പേര് (Nickname)", m.nickname],
+        ["കുടുംബപ്പേര് (Family Name)", m.familyName],
+        ["കുടുംബ ശാഖ (Branch)", m.branch],
+        ["ജനനത്തീയതി (DOB)", formatDobDisplay(m.dob)],
+        ["വയസ്സ് (Age)", ageStr],
+        ["ബ്ലഡ് ഗ്രൂപ്പ് (Blood Group)", m.bloodGroup],
+        ["പിതാവിന്റെ പേര് (Father)", m.fatherName],
+        ["മാതാവിന്റെ പേര് (Mother)", m.motherName],
+        ["പങ്കാളിയുടെ പേര് (Spouse)", m.spouseName],
+        ["മൊബൈൽ നമ്പർ 1", m.mobile1],
+        ["മൊബൈൽ നമ്പർ 2", m.mobile2],
+        ["ഇമെയിൽ ഐഡി (Email)", m.email]
+      ];
+
+      return `
+        <div style="max-width:640px;margin:0 auto;">
+          <div style="border-bottom:2px solid #0f766e;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f766e;">MMH FAMILY TRUST</h2>
+              <p style="margin:2px 0 0;font-size:12px;color:#475569;">അംഗത്വ വിവര രേഖ (Member Profile)</p>
+            </div>
+            <div style="font-size:11px;color:#475569;">തീയതി: ${escapeHtml(new Date().toLocaleDateString("en-GB"))}</div>
+          </div>
+          <table class="print-table w-full border-collapse text-sm">
+            <tbody>
+              ${rows.map(([label, val]) => `
+                <tr>
+                  <th class="border border-slate-300 bg-slate-50 px-3 py-2 text-left w-2/5 font-semibold text-slate-700">${escapeHtml(label)}</th>
+                  <td class="border border-slate-300 px-3 py-2 font-medium text-slate-900">${escapeHtml(val || "-")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function openPrintPreview(html, subtitle, documentTitleForPdf) {
+      document.getElementById("printViewSubtitle").textContent = subtitle;
+      document.getElementById("printViewContent").innerHTML = html;
+      document.getElementById("printRoot").innerHTML = html;
+      document.getElementById("printViewModal").dataset.pdfTitle = documentTitleForPdf || "MMH_Family_Directory";
+      document.getElementById("printViewModal").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    // --- Helpers ---
+    function populateBranchSelects() {
+      const regSel = document.getElementById("branchSelect");
+      regSel.innerHTML = `<option value="">-- ശാഖ തിരഞ്ഞെടുക്കുക --</option>` +
+        BRANCHES.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join("");
+
+      const editSel = document.getElementById("editBranchSelect");
+      editSel.innerHTML = `<option value="">-- ശാഖ തിരഞ്ഞെടുക്കുക --</option>` +
+        BRANCHES.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderAll() {
+      renderBranchFilters();
+      renderDirectory();
+      renderFamilyTree();
+      renderSelectedTreeBranch();
+    }
+
+    // --- Event Listeners ---
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      state.searchQuery = e.target.value;
+      renderDirectory();
+    });
+
+    document.getElementById("sortSelect").addEventListener("change", (e) => {
+      state.sortBy = e.target.value;
+      renderDirectory();
+    });
+
+    document.getElementById("openPrintViewBtn").addEventListener("click", () => {
+      const list = getFilteredAndSortedMembers();
+      const branchLabel = state.selectedBranchFilter === "ALL" ? "എല്ലാ ശാഖകളും" : `ശാഖ: ${state.selectedBranchFilter}`;
+      const queryLabel = state.searchQuery.trim() ? ` | തിരയൽ: "${state.searchQuery.trim()}"` : "";
+      const html = buildDirectoryPrintHtml(list, `${branchLabel}${queryLabel}`);
+      openPrintPreview(html, `${list.length} അംഗങ്ങൾ — ${branchLabel}`, "MMH_Family_Directory");
+    });
+
+    document.getElementById("printSelectedBranchBtn").addEventListener("click", () => {
+      if (!state.selectedTreeBranch) return;
+      const list = sortMembersList(
+        state.members.filter(m => m.branch === state.selectedTreeBranch),
+        "age-desc"
+      );
+      const html = buildDirectoryPrintHtml(list, `ശാഖ: ${state.selectedTreeBranch}`);
+      openPrintPreview(html, `${list.length} അംഗങ്ങൾ — ${state.selectedTreeBranch}`, state.selectedTreeBranch.replace(/\s+/g, "_"));
+    });
+
+    document.getElementById("triggerPrintBtn").addEventListener("click", () => {
+      const origTitle = document.title;
+      const pdfTitle = document.getElementById("printViewModal").dataset.pdfTitle;
+      if (pdfTitle) document.title = pdfTitle;
+      window.print();
+      setTimeout(() => { document.title = origTitle; }, 500);
+    });
+
+    document.getElementById("closePrintViewModal").addEventListener("click", () => {
+      document.getElementById("printViewModal").classList.add("hidden");
+    });
+
+    document.getElementById("refreshDataBtn").addEventListener("click", () => {
+      if (state.scriptUrl) fetchFromGoogleSheet();
+      else {
+        renderAll();
+        showToast("ഡാറ്റ പുതുക്കി!");
+      }
+    });
+
+    document.getElementById("addToSelectedBranchBtn").addEventListener("click", () => {
+      if (state.selectedTreeBranch) {
+        document.getElementById("branchSelect").value = state.selectedTreeBranch;
+      }
+      switchTab("register");
+    });
+
+    document.getElementById("regDobInput").addEventListener("change", () => {
+      updateDobAgeLabel("regDobInput", "regAgeDisplay");
+    });
+
+    document.getElementById("editDobInput").addEventListener("change", () => {
+      updateDobAgeLabel("editDobInput", "editAgeDisplay");
+    });
+
+    // Registration Form -> Opens Preview Modal
+    document.getElementById("memberForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const upper = v => String(v || "").trim().toUpperCase();
+      state.pendingNewMember = {
+        id: "m_" + Date.now(),
+        rowIndex: state.members.length + 2,
+        name: upper(fd.get("name")),
+        nickname: upper(fd.get("nickname")),
+        familyName: upper(fd.get("familyName")),
+        branch: fd.get("branch"),
+        bloodGroup: fd.get("bloodGroup"),
+        fatherName: upper(fd.get("fatherName")),
+        motherName: upper(fd.get("motherName")),
+        dob: fd.get("dob"),
+        mobile1: String(fd.get("mobile1") || "").trim(),
+        mobile2: String(fd.get("mobile2") || "").trim(),
+        spouseName: upper(fd.get("spouseName")),
+        email: String(fd.get("email") || "").trim()
+      };
+
+      document.getElementById("registerPreviewBody").innerHTML = buildSingleMemberPrintHtml(state.pendingNewMember);
+      document.getElementById("registerPreviewModal").classList.remove("hidden");
+      lucide.createIcons();
+    });
+
+    document.getElementById("closeRegisterPreviewModal").addEventListener("click", () => {
+      document.getElementById("registerPreviewModal").classList.add("hidden");
+    });
+
+    document.getElementById("editFromPreviewBtn").addEventListener("click", () => {
+      document.getElementById("registerPreviewModal").classList.add("hidden");
+    });
+
+    document.getElementById("printRegisterPreviewBtn").addEventListener("click", () => {
+      if (!state.pendingNewMember) return;
+      const firstName = (state.pendingNewMember.name || "Member").split(/\s+/)[0];
+      const html = buildSingleMemberPrintHtml(state.pendingNewMember);
+      document.getElementById("registerPreviewModal").classList.add("hidden");
+      openPrintPreview(html, state.pendingNewMember.name, firstName);
+    });
+
+    document.getElementById("confirmSubmitMemberBtn").addEventListener("click", async () => {
+      if (!state.pendingNewMember) return;
+      const newMember = state.pendingNewMember;
+      const btn = document.getElementById("confirmSubmitMemberBtn");
+      btn.disabled = true;
+
+      if (state.scriptUrl) {
+        try {
+          await fetch(state.scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "add", ...newMember })
+          });
+          state.members.unshift(newMember);
+          showToast("പുതിയ അംഗത്തെ ഗൂഗിൾ ഷീറ്റിലേക്ക് ചേർത്തു!");
+        } catch (err) {
+          showToast("ഗൂഗിൾ ഷീറ്റിലേക്ക് അയക്കുന്നതിൽ പിശക് സംഭവിച്ചു.", true);
+        }
+      } else {
+        state.members.unshift(newMember);
+        saveDemoMembers();
+        showToast("അംഗത്തെ ചേർത്തു! (Demo Mode)");
+      }
+
+      btn.disabled = false;
+      state.pendingNewMember = null;
+      document.getElementById("registerPreviewModal").classList.add("hidden");
+      document.getElementById("memberForm").reset();
+      document.getElementById("regAgeDisplay").textContent = "";
+      renderAll();
+      switchTab("directory");
+    });
+
+    // Member Detail Modal Actions
+    document.getElementById("closeMemberModal").addEventListener("click", () => {
+      document.getElementById("memberModal").classList.add("hidden");
+    });
+
+    document.getElementById("modalEditBtn").addEventListener("click", () => {
+      if (state.activeModalMemberId) openEditModal(state.activeModalMemberId);
+    });
+
+    document.getElementById("modalPrintBtn").addEventListener("click", () => {
+      const m = state.members.find(x => x.id === state.activeModalMemberId);
+      if (!m) return;
+      const firstName = (m.name || "Member").split(/\s+/)[0];
+      document.getElementById("memberModal").classList.add("hidden");
+      openPrintPreview(buildSingleMemberPrintHtml(m), m.name, firstName);
+    });
+
+    // Edit Member Form Submit
+    document.getElementById("closeEditModal").addEventListener("click", () => {
+      document.getElementById("editMemberModal").classList.add("hidden");
+    });
+
+    document.getElementById("cancelEditBtn").addEventListener("click", () => {
+      document.getElementById("editMemberModal").classList.add("hidden");
+    });
+
+    document.getElementById("editMemberForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const upper = v => String(v || "").trim().toUpperCase();
+      const id = fd.get("id");
+      const rowIndex = fd.get("rowIndex") ? Number(fd.get("rowIndex")) : null;
+
+      const updated = {
+        id,
+        rowIndex,
+        name: upper(fd.get("name")),
+        nickname: upper(fd.get("nickname")),
+        familyName: upper(fd.get("familyName")),
+        branch: fd.get("branch"),
+        bloodGroup: fd.get("bloodGroup"),
+        fatherName: upper(fd.get("fatherName")),
+        motherName: upper(fd.get("motherName")),
+        dob: fd.get("dob"),
+        mobile1: String(fd.get("mobile1") || "").trim(),
+        mobile2: String(fd.get("mobile2") || "").trim(),
+        spouseName: upper(fd.get("spouseName")),
+        email: String(fd.get("email") || "").trim()
+      };
+
+      const saveBtn = document.getElementById("saveEditMemberBtn");
+      saveBtn.disabled = true;
+
+      const idx = state.members.findIndex(x => x.id === id);
+      if (idx !== -1) {
+        state.members[idx] = { ...state.members[idx], ...updated };
+      }
+
+      if (state.scriptUrl) {
+        try {
+          await fetch(state.scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "update", ...updated })
+          });
+          showToast("മാറ്റങ്ങൾ ഗൂഗിൾ ഷീറ്റിൽ അപ്‌ഡേറ്റ് ചെയ്തു!");
+        } catch (err) {
+          showToast("ഗൂഗിൾ ഷീറ്റിലേക്ക് അപ്‌ഡേറ്റ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു.", true);
+        }
+      } else {
+        saveDemoMembers();
+        showToast("അംഗത്തിന്റെ വിവരങ്ങൾ വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു!");
+      }
+
+      saveBtn.disabled = false;
+      document.getElementById("editMemberModal").classList.add("hidden");
+      renderAll();
+    });
+
+    // Setup Modal Listeners
+    document.getElementById("openSetupBtn").addEventListener("click", () => {
+      document.getElementById("setupModal").classList.remove("hidden");
+    });
+
+    document.getElementById("closeSetupModal").addEventListener("click", () => {
+      document.getElementById("setupModal").classList.add("hidden");
+    });
+
+    document.getElementById("saveScriptUrlBtn").addEventListener("click", () => {
+      const url = document.getElementById("appsScriptUrlInput").value.trim().replace(/^https:/i, "https:");
+      if (!url.toLowerCase().startsWith("https://script.google.com/")) {
+        showToast("ദയവായി ശരിയായ Google Apps Script URL നൽകുക.", true);
+        return;
+      }
+      state.scriptUrl = url;
+      try {
+        localStorage.removeItem("mmh_demo_mode");
+        localStorage.setItem("mmh_script_url", url);
+      } catch (e) {}
+      updateConnectionBadge();
+      document.getElementById("setupModal").classList.add("hidden");
+      fetchFromGoogleSheet();
+    });
+
+    document.getElementById("disconnectSheetBtn").addEventListener("click", () => {
+      state.scriptUrl = "";
+      document.getElementById("appsScriptUrlInput").value = "";
+      try {
+        localStorage.setItem("mmh_demo_mode", "1");
+        localStorage.removeItem("mmh_script_url");
+      } catch (e) {}
+      state.members = [...SAMPLE_MEMBERS];
+      updateConnectionBadge();
+      renderAll();
+      document.getElementById("setupModal").classList.add("hidden");
+      showToast("Demo Mode-ലേക്ക് മാറ്റി.");
+    });
+
+    document.getElementById("copyScriptBtn").addEventListener("click", () => {
+      const code = document.getElementById("appsScriptCode").textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast("Apps Script കോഡ് കോപ്പി ചെയ്തു!"));
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToast("Apps Script കോഡ് കോപ്പി ചെയ്തു!");
+      }
+    });
+
+    // CSV Export (uses current filtered & age-sorted order)
+    document.getElementById("exportCsvBtn").addEventListener("click", () => {
+      const list = getFilteredAndSortedMembers();
+      const headers = ["Name", "Nickname", "FamilyName", "Branch", "BloodGroup", "FatherName", "MotherName", "DOB", "Age", "Mobile1", "Mobile2", "SpouseName", "Email"];
+      const rows = list.map(m => {
+        const ageObj = calculateAge(m.dob);
+        return [
+          m.name, m.nickname, m.familyName, m.branch, m.bloodGroup || "", m.fatherName, m.motherName,
+          formatDobDisplay(m.dob), ageObj ? ageObj.years : "", m.mobile1, m.mobile2, m.spouseName, m.email
+        ].map(v => `"${String(v || "").replace(/"/g, '""')}"`).join(",");
+      });
+      const csv = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "mmh_family_trust_members.csv";
+      link.click();
+    });
+
+    // Init
+    populateBranchSelects();
+    loadInitialState();
+    renderAll();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
